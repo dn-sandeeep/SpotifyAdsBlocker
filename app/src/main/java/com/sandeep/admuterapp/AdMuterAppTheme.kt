@@ -9,12 +9,12 @@ import androidx.compose.material3.*
 import androidx.compose.ui.graphics.Color
 
 private val DarkColorScheme = darkColorScheme(
-    primary = Color(0xFF1DB954),
+    primary = Color(0xFF1d6ef0),
     onPrimary = Color.White,
-    secondary = Color(0xFF282828),
+    secondary = Color(0xFFb160f0),
     onSecondary = Color.White,
     background = Color(0xFF121212),
-    surface = Color(0xFF1E1E1E),
+    surface = Color(0xFFb160f0),
     onSurface = Color.White,
 )
 

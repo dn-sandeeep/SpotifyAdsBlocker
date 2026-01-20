@@ -9,6 +9,13 @@ import android.service.notification.StatusBarNotification
 import android.util.Log
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 
+//manifest.xml
+//android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE"
+
+//<intent-filter>
+//     <action android:name="android.service.notification.NotificationListenerService" />
+//</intent-filter>
+
 class NotificationListener : NotificationListenerService() {
     private var lastTrackId: String? = null
     private lateinit var repository: AdRepository
@@ -24,33 +31,13 @@ class NotificationListener : NotificationListenerService() {
         val extras = notification.extras
         val packageName = sbn.packageName
 
-        if (packageName == "com.spotify.music") {
+        if (packageName == "com.spotify.music") {                                //com.spotify.music
 
             val title = extras.getCharSequence(Notification.EXTRA_TITLE)?.toString() ?: ""
             val text = extras.getCharSequence(Notification.EXTRA_TEXT)?.toString() ?: ""
             //Log.d("SpotifyListener", "TITLE: $title | TEXT: $text")
-            //Log.d("NotificationListener", "Spotify notification: title=$title, text=$text")
 
-//            if (isAd( text)) {
-//                repository.muteAd()
-//                //Log.d("NotificationListener", "Ad detected! Muting volume")
-//                sendCounterUpdate("Ads")
-//            } else {
-//                repository.unmuteAd()
-//                //Log.d("NotificationListener", "Song detected! Unmuting volume")
-//                sendCounterUpdate("Songs")
-//
-//            }
-//            val trackId = title + text // ya koi unique identifier
-//            if (!isAd(text)) {
-//                if (trackId != lastTrackId) {      // ✅ naya song
-//                    repository.incrementSongCounter()
-//                    lastTrackId = trackId
-//                }
-//                repository.unmuteAd()
-//            } else {
-//                repository.muteAd()
-//            }
+
             val currentTrackId = "$title-$text"
 
             if (isAd(text)) {
@@ -72,6 +59,7 @@ class NotificationListener : NotificationListenerService() {
             }
         }
     }
+
     private fun sendCounterUpdate(type: String) {
         //Log.d("NotificationListener", "Sending counter update: $type")
         val intent = Intent("COUNTER_CHANGED")
@@ -79,6 +67,7 @@ class NotificationListener : NotificationListenerService() {
         //sendBroadcast(intent)
         LocalBroadcastManager.getInstance(this).sendBroadcast(intent)
     }
+
     private fun isAd(text: String): Boolean {
         val lowerText = text.lowercase()
         return lowerText.contains("advertisement")

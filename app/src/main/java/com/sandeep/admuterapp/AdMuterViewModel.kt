@@ -10,7 +10,7 @@ class AdMuterViewModel : ViewModel() {
 
     private val _adsCount = MutableStateFlow(0)
     val adsCount: StateFlow<Int> = _adsCount.asStateFlow()
-    private val _songsCount = MutableStateFlow(1)
+    private val _songsCount = MutableStateFlow(0)
     val songsCount: StateFlow<Int> = _songsCount.asStateFlow()
 
 

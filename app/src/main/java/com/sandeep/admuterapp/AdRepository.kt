@@ -7,8 +7,6 @@ import androidx.localbroadcastmanager.content.LocalBroadcastManager
 
 class AdRepository(private val context: Context) {
 
-    private lateinit var repository: AdRepository
-
 
 
     private val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
@@ -17,16 +15,13 @@ class AdRepository(private val context: Context) {
         audioManager.adjustStreamVolume(AudioManager.STREAM_MUSIC, AudioManager.ADJUST_MUTE, 0)
         sendBroadcast("Ads")
     }
-
     fun unmuteAd() {
         audioManager.adjustStreamVolume(AudioManager.STREAM_MUSIC, AudioManager.ADJUST_UNMUTE, 0)
         //sendBroadcast("Songs")
     }
-
     fun incrementSongCounter() {
         sendBroadcast("Songs")
     }
-
     private fun sendBroadcast(type: String) {
         val intent = Intent("COUNTER_CHANGED").apply {
             putExtra("TYPE", type)
