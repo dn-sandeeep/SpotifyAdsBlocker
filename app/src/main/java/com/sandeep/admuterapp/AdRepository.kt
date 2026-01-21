@@ -17,7 +17,7 @@ class AdRepository(private val context: Context) {
     }
     fun unmuteAd() {
         audioManager.adjustStreamVolume(AudioManager.STREAM_MUSIC, AudioManager.ADJUST_UNMUTE, 0)
-        //sendBroadcast("Songs")
+
     }
     fun incrementSongCounter() {
         sendBroadcast("Songs")

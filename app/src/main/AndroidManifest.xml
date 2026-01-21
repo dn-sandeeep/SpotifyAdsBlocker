@@ -3,6 +3,10 @@
     xmlns:tools="http://schemas.android.com/tools">
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
+    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
+    <queries>
+        <package android:name="com.spotify.music" />
+    </queries>
 
     <application
         android:allowBackup="true"
@@ -29,12 +33,18 @@
             android:exported="true"
             android:label="AdMuterApp"
             android:foregroundServiceType="mediaPlayback">
-<!--            android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">-->
-
-
             <intent-filter>
-<!--                 <action android:name="android.service.notification.NotificationListenerService" />-->
                 <action android:name="android.media.browse.MediaBrowserService" />
+            </intent-filter>
+        </service>
+
+        <service
+            android:name=".NotificationListener"
+            android:exported="true"
+            android:label="AdMuter Notification Listener"
+            android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">
+            <intent-filter>
+                <action android:name="android.service.notification.NotificationListenerService" />
             </intent-filter>
         </service>
     </application>

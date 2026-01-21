@@ -20,6 +20,8 @@ class NotificationListener : NotificationListenerService() {
     private var lastTrackId: String? = null
     private lateinit var repository: AdRepository
     private var wasAdDetected = false
+    private val actionDetector = AdActionDetector()
+    private var lastUpdateTime = 0L
 
     override fun onCreate() {
         super.onCreate()
@@ -31,61 +33,46 @@ class NotificationListener : NotificationListenerService() {
         val extras = notification.extras
         val packageName = sbn.packageName
 
-        if (packageName == "com.spotify.music") {                                //com.spotify.music
+        if (packageName == "com.spotify.music") {
 
             val title = extras.getCharSequence(Notification.EXTRA_TITLE)?.toString() ?: ""
             val text = extras.getCharSequence(Notification.EXTRA_TEXT)?.toString() ?: ""
-            //Log.d("SpotifyListener", "TITLE: $title | TEXT: $text")
+            Log.d("NotificationListener", "Active Notification -> Title: $title | Text: $text")
 
+            actionDetector.isAdBasedOnActions(sbn)
 
             val currentTrackId = "$title-$text"
-
-            if (isAd(text)) {
-                repository.muteAd()
-                //Log.d("TrackCounter", "❌ Ad: $currentTrackId")
-                wasAdDetected = true
+            
+            // Hybrid Check: Text-based OR Action-based
+            val isTextAd = isAd(title, text)
+            val isActionAd = actionDetector.isAdBasedOnActions(sbn)
+            
+            if (isTextAd || isActionAd) {
+                if (!wasAdDetected) {
+                    repository.muteAd()
+                    wasAdDetected = true
+                    Log.d("TrackCounter", "❌ Ad detected (Notif): $currentTrackId")
+                }
             } else {
                 repository.unmuteAd()
 
-                // 🔑 Count increase only if new track detected
                 if (currentTrackId != lastTrackId) {
-                    repository.incrementSongCounter()
-                    lastTrackId = currentTrackId
-                    Log.d("TrackCounter", "✅ New Song: $currentTrackId")
-                } else {
-
+                    val currentTime = System.currentTimeMillis()
+                    if (currentTime - lastUpdateTime > 2000) { // Increased to 2000ms debounce
+                        repository.incrementSongCounter()
+                        lastTrackId = currentTrackId
+                        lastUpdateTime = currentTime
+                        Log.d("TrackCounter", "✅ New Song (Notif): $currentTrackId")
+                    }
                 }
                 wasAdDetected = false
             }
         }
     }
 
-    private fun sendCounterUpdate(type: String) {
-        //Log.d("NotificationListener", "Sending counter update: $type")
-        val intent = Intent("COUNTER_CHANGED")
-        intent.putExtra("TYPE", type)
-        //sendBroadcast(intent)
-        LocalBroadcastManager.getInstance(this).sendBroadcast(intent)
-    }
-
-    private fun isAd(text: String): Boolean {
+    private fun isAd(title: String, text: String): Boolean {
+        val lowerTitle = title.lowercase()
         val lowerText = text.lowercase()
-        return lowerText.contains("advertisement")
+        return lowerTitle.contains("advertisement") || lowerText.contains("advertisement") || (lowerTitle.isBlank() && lowerText.isBlank())
     }
-
-//    private fun muteVolume() {
-//        val audioManager = getSystemService(AUDIO_SERVICE) as AudioManager
-//        audioManager.adjustStreamVolume(AudioManager.STREAM_MUSIC, AudioManager.ADJUST_MUTE, 0)
-//        //Log.d("SpotifyListener", "🔇 Muted")
-//        sendCounterUpdate("Ads")
-//    }
-//
-//    private fun unmuteVolume() {
-//        val audioManager = getSystemService(AUDIO_SERVICE) as AudioManager
-//        audioManager.adjustStreamVolume(AudioManager.STREAM_MUSIC, AudioManager.ADJUST_UNMUTE, 0)
-//        //Log.d("SpotifyListener", "🔊 Unmuted")
-//        sendCounterUpdate("Songs")
-//
-//    }
 }
-

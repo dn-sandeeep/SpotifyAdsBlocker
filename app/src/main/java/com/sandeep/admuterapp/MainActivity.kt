@@ -46,17 +46,12 @@ import com.sandeep.admuterapp.ui.theme.AdMuterAppTheme
 
 class MainActivity : ComponentActivity() {
     private val viewModel: AdMuterViewModel by viewModels()
-//    private val isListenerEnabled: Boolean
-//        get() {
-//            val enabledListeners =
-//                Settings.Secure.getString(contentResolver, "enabled_notification_listeners")
-//            return enabledListeners?.contains(packageName) == true
-//        }
+
 
 
     private val counterReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
-            //Log.d("MainActivity", "Counter broadcast received: $type")
+            Log.d("MainActivity", "Counter broadcast received: ${intent?.getStringExtra("TYPE")}")
             when (intent?.getStringExtra("TYPE")) {
                 "Ads" -> {
                     viewModel.incrementAds()
@@ -95,12 +90,14 @@ class MainActivity : ComponentActivity() {
         }
     }
     private fun isServiceRunning(): Boolean {
-
-        return true // Simplification for now
+        return MediaSessionListenerService.isServiceRunning
     }
     private fun startMediaSessionService() {
+        val intent = Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)
+        startActivity(intent)
+        
+        // Also start the foreground service
         val serviceIntent = Intent(this, MediaSessionListenerService::class.java)
-
         ContextCompat.startForegroundService(this, serviceIntent)
         Log.d("MainActivity", "MediaSessionListenerService started.")
     }
@@ -113,10 +110,10 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun AdMuterApp(
     modifier: Modifier,
-    //isListenerEnabled: Boolean,
+
     isServiceRunning: Boolean,
     viewModel: AdMuterViewModel,
-    //onEnabledClick: () -> Unit
+
     onStartServiceClick: () -> Unit
 ) {
     var isActive by remember {
@@ -149,9 +146,9 @@ fun AdMuterApp(
                 Spacer(modifier = Modifier.height(20.dp))
                 Text(
                     if (isActive) {
-                        "Permission Access Granted"
+                        "AdMuter Service Active"
                     } else {
-                        "Permission Access Not Granted"
+                        "Service Not Running"
                     },
                     color = if (isActive) Color(0xFFb160f0) else Color.Red,
                     fontSize = 16.sp,
@@ -159,8 +156,11 @@ fun AdMuterApp(
                 )
                 Spacer(modifier = Modifier.height(20.dp))
 
-                Button(onClick = onStartServiceClick) {
-                    Text("Give Permission Access")
+                Button(onClick = {
+                    onStartServiceClick()
+                    isActive = true
+                }, enabled = !isActive) {
+                    Text(if (isActive) "Service Running" else "Start Service")
                 }
                 Spacer(modifier = Modifier.height(40.dp))
                 // --- Display Counters ---
