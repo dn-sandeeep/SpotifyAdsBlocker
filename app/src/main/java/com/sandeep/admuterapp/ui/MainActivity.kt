@@ -1,9 +1,12 @@
 package com.sandeep.admuterapp.ui
 
+import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.os.PowerManager
 import android.provider.Settings
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -49,7 +52,7 @@ class MainActivity : ComponentActivity() {
         ActivityResultContracts.RequestPermission()
     ) { isGranted: Boolean ->
         if (isGranted) {
-            startMediaSessionService()
+            checkBatteryOptimizationAndStart()
         }
     }
 
@@ -82,11 +85,27 @@ class MainActivity : ComponentActivity() {
             ) {
                 requestPermissionLauncher.launch(android.Manifest.permission.POST_NOTIFICATIONS)
             } else {
-                startMediaSessionService()
+                checkBatteryOptimizationAndStart()
             }
         } else {
-            startMediaSessionService()
+            checkBatteryOptimizationAndStart()
         }
+    }
+
+    private fun checkBatteryOptimizationAndStart() {
+        val powerManager = getSystemService(Context.POWER_SERVICE) as PowerManager
+        val packageName = packageName
+        
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            if (!powerManager.isIgnoringBatteryOptimizations(packageName)) {
+                val intent = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {
+                    data = Uri.parse("package:$packageName")
+                }
+                startActivity(intent)
+            }
+        }
+        
+        startMediaSessionService()
     }
 
     private fun isServiceRunning(): Boolean {
@@ -220,3 +239,121 @@ fun StatCard(title: String, count: Int, modifier: Modifier, color: Color) {
         }
     }
 }
+//@Composable
+//fun AdMuterApp(
+//    modifier: Modifier,
+//
+//    isServiceRunning: Boolean,
+//    viewModel: AdMuterViewModel,
+//
+//    onStartServiceClick: () -> Unit
+//) {
+//    var isActive by remember {
+//        mutableStateOf(isServiceRunning)
+//
+//    }
+//    val adsCount by viewModel.adsCount.collectAsState()
+//    val songsCount by viewModel.songsCount.collectAsState()
+//    Box(
+//        modifier = Modifier.fillMaxSize(),
+//        contentAlignment = Alignment.Center
+//    ) {
+//        Card(
+//            modifier = Modifier
+//                .size(width = 400.dp, height = 400.dp)
+//                .padding(16.dp)
+//        ) {
+//            Column(
+//                modifier = Modifier
+//                    .fillMaxSize()
+//                    .padding(24.dp),
+//                verticalArrangement = Arrangement.Center,
+//                horizontalAlignment = Alignment.CenterHorizontally
+//            ) {
+//                Text(
+//                    text = "Spotify Ad Muter",
+//                    fontWeight = FontWeight.Bold
+//                )
+//                Spacer(modifier = Modifier.height(20.dp))
+//                Text(
+//                    if (isActive) {
+//                        "AdMuter Service Active"
+//                    } else {
+//                        "Service Not Running"
+//                    },
+//                    color = if (isActive) Color(0xFFb160f0) else Color.Red,
+//                    fontSize = 16.sp,
+//                    fontWeight = FontWeight.Bold
+//                )
+//                Spacer(modifier = Modifier.height(20.dp))
+//
+//                Button(onClick = {
+//                    onStartServiceClick()
+//                    isActive = true
+//                }, enabled = !isActive) {
+//                    Text(if (isActive) "Service Running" else "Start Service")
+//                }
+//                Spacer(modifier = Modifier.height(40.dp))
+//                // --- Display Counters ---
+//                StatisticsDashboard(adsCount = adsCount, songsCount = songsCount)
+//
+//            }
+//        }
+//    }
+//}
+//@Composable
+//fun StatisticsDashboard(adsCount: Int, songsCount: Int) {
+//    Row(
+//        modifier = Modifier
+//            .fillMaxWidth()
+//            .padding(horizontal = 8.dp),
+//        horizontalArrangement = Arrangement.SpaceEvenly
+//    ) {
+//        StatCard(
+//            title = "Ads Muted",
+//            count = adsCount,
+//            modifier = Modifier.weight(1f),
+//            color = Color(0xFFE57373)
+//        )
+//
+//        Spacer(modifier = Modifier.width(16.dp))
+//
+//        StatCard(
+//            title = "Songs Played",
+//            count = songsCount,
+//            modifier = Modifier.weight(1f),
+//            color = Color(0xFF1d6ef0)
+//        )
+//    }
+//}
+
+//@Composable
+//fun StatCard(title: String, count: Int, modifier: Modifier, color: Color) {
+//    Card(
+//        modifier = modifier
+//            .height(120.dp)
+//    ) {
+//        Column(
+//            modifier = Modifier
+//                .fillMaxSize()
+//                .padding(12.dp),
+//            horizontalAlignment = Alignment.CenterHorizontally,
+//            verticalArrangement = Arrangement.Center
+//        ) {
+//            Text(
+//                text = title,
+//                fontSize = 14.sp,
+//                fontWeight = FontWeight.SemiBold,
+//                color = Color.Gray
+//            )
+//            Spacer(modifier = Modifier.height(8.dp))
+//            Text(
+//                text = count.toString(),
+//                fontSize = 32.sp,
+//                fontWeight = FontWeight.ExtraBold,
+//                color = color,
+//                textAlign = TextAlign.Center
+//            )
+//        }
+//    }
+//}

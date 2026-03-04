@@ -38,19 +38,16 @@ class MediaSessionListenerService : MediaBrowserServiceCompat() {
     // --- OnCreate ---
     override fun onCreate() {
         super.onCreate()
+        startServiceInForeground()
         isServiceRunning = true
         repository = AdRepository.getInstance(this)
 
         val spotifyComponentName = ComponentName(spotifyPackageName, spotifyMediaPlaybackService)
         mediaBrowser = MediaBrowserCompat(this, spotifyComponentName, connectionCallbacks, null)
         mediaBrowser?.connect()
-
-
-
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        startServiceInForeground()
         super.onStartCommand(intent, flags, startId)
         return START_STICKY
     }
@@ -65,6 +62,9 @@ class MediaSessionListenerService : MediaBrowserServiceCompat() {
                 .setContentText("Monitoring Spotify for Ads")
                 .setSmallIcon(R.drawable.ic_launcher_foreground)
                 .setTicker("Service Running")
+                .setOngoing(true)
+                .setCategory(Notification.CATEGORY_SERVICE)
+                .setVisibility(Notification.VISIBILITY_PUBLIC)
                 .build()
         } else {
             @Suppress("DEPRECATION")
@@ -73,6 +73,9 @@ class MediaSessionListenerService : MediaBrowserServiceCompat() {
                 .setContentText("Monitoring Spotify for Ads")
                 .setSmallIcon(R.drawable.ic_launcher_foreground)
                 .setTicker("Service Running")
+                .setOngoing(true)
+                .setPriority(Notification.PRIORITY_MAX)
+                .setVisibility(Notification.VISIBILITY_PUBLIC)
                 .build()
         }
         
@@ -186,7 +189,5 @@ class MediaSessionListenerService : MediaBrowserServiceCompat() {
         isServiceRunning = false
         mediaController?.unregisterCallback(playbackCallback)
         mediaBrowser?.disconnect()
-        @Suppress("DEPRECATION")
-        stopForeground(true)
     }
 }
