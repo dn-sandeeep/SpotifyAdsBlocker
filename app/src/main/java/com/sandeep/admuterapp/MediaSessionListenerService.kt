@@ -11,7 +11,6 @@ import android.support.v4.media.MediaBrowserCompat
 import android.support.v4.media.MediaMetadataCompat
 import android.support.v4.media.session.MediaControllerCompat
 import android.support.v4.media.session.PlaybackStateCompat
-import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.media.MediaBrowserServiceCompat
 
@@ -38,7 +37,6 @@ class MediaSessionListenerService : MediaBrowserServiceCompat() {
     }
 
     // --- OnCreate ---
-    @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate() {
         super.onCreate()
         isServiceRunning = true
@@ -52,7 +50,6 @@ class MediaSessionListenerService : MediaBrowserServiceCompat() {
 
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         startServiceInForeground()
         super.onStartCommand(intent, flags, startId)
@@ -60,15 +57,26 @@ class MediaSessionListenerService : MediaBrowserServiceCompat() {
     }
 
 
-    @RequiresApi(Build.VERSION_CODES.O)
     private fun startServiceInForeground() {
         createNotificationChannel()
-        val notification = Notification.Builder(this, CHANNEL_ID)
-            .setContentTitle("AdMuter App")
-            .setContentText("Monitoring Spotify for Ads")
-            .setSmallIcon(R.drawable.ic_launcher_foreground)
-            .setTicker("Service Running")
-            .build()
+        
+        val notification = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            Notification.Builder(this, CHANNEL_ID)
+                .setContentTitle("AdMuter App")
+                .setContentText("Monitoring Spotify for Ads")
+                .setSmallIcon(R.drawable.ic_launcher_foreground)
+                .setTicker("Service Running")
+                .build()
+        } else {
+            @Suppress("DEPRECATION")
+            Notification.Builder(this)
+                .setContentTitle("AdMuter App")
+                .setContentText("Monitoring Spotify for Ads")
+                .setSmallIcon(R.drawable.ic_launcher_foreground)
+                .setTicker("Service Running")
+                .build()
+        }
+        
         startForeground(NOTIFICATION_ID, notification)
     }
     private fun createNotificationChannel() {
@@ -79,8 +87,7 @@ class MediaSessionListenerService : MediaBrowserServiceCompat() {
                 NotificationManager.IMPORTANCE_LOW
             )
             val manager = getSystemService(NotificationManager::class.java)
-            manager.createNotificationChannel(serviceChannel
-            )
+            manager?.createNotificationChannel(serviceChannel)
         }
     }
 
@@ -91,7 +98,6 @@ class MediaSessionListenerService : MediaBrowserServiceCompat() {
             val token = mediaBrowser?.sessionToken ?: return
             mediaController = MediaControllerCompat(this@MediaSessionListenerService, token)
             mediaController?.registerCallback(playbackCallback)
-            Log.d("MediaSession", "Connected and Registered Callback")
         }
 
         override fun onConnectionSuspended() {
@@ -101,7 +107,6 @@ class MediaSessionListenerService : MediaBrowserServiceCompat() {
 
         override fun onConnectionFailed() {
 
-            Log.e("MediaSession", "Connection to Spotify failed")
         }
     }
 
@@ -124,7 +129,6 @@ class MediaSessionListenerService : MediaBrowserServiceCompat() {
         val title = metadata?.getString(MediaMetadataCompat.METADATA_KEY_TITLE) ?: ""
         val artist = metadata?.getString(MediaMetadataCompat.METADATA_KEY_ARTIST) ?: ""
 
-        Log.d("TrackCounter", "Raw Metadata -> Title: '$title', Artist: '$artist'")
 
         val currentTrackId = "$title-$artist"
 
@@ -132,7 +136,6 @@ class MediaSessionListenerService : MediaBrowserServiceCompat() {
             if (!wasAdDetected) {
                 repository.muteAd()
                 wasAdDetected = true
-                Log.d("TrackCounter", "❌ Ad detected: $currentTrackId")
             }
         } else {
             repository.unmuteAd()
@@ -141,7 +144,6 @@ class MediaSessionListenerService : MediaBrowserServiceCompat() {
             if (currentTrackId != lastTrackId) {
                 repository.incrementSongCounter()
                 lastTrackId = currentTrackId
-                Log.d("TrackCounter", "✅ New Song: $currentTrackId")
             }
             wasAdDetected = false
         }
@@ -176,6 +178,7 @@ class MediaSessionListenerService : MediaBrowserServiceCompat() {
         isServiceRunning = false
         mediaController?.unregisterCallback(playbackCallback)
         mediaBrowser?.disconnect()
+        @Suppress("DEPRECATION")
         stopForeground(true)
     }
 }

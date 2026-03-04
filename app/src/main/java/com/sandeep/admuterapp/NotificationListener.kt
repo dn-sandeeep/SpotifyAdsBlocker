@@ -6,7 +6,6 @@ import android.content.Intent
 import android.media.AudioManager
 import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
-import android.util.Log
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 
 //manifest.xml
@@ -37,7 +36,6 @@ class NotificationListener : NotificationListenerService() {
 
             val title = extras.getCharSequence(Notification.EXTRA_TITLE)?.toString() ?: ""
             val text = extras.getCharSequence(Notification.EXTRA_TEXT)?.toString() ?: ""
-            Log.d("NotificationListener", "Active Notification -> Title: $title | Text: $text")
 
             actionDetector.isAdBasedOnActions(sbn)
 
@@ -51,7 +49,6 @@ class NotificationListener : NotificationListenerService() {
                 if (!wasAdDetected) {
                     repository.muteAd()
                     wasAdDetected = true
-                    Log.d("TrackCounter", "❌ Ad detected (Notif): $currentTrackId")
                 }
             } else {
                 repository.unmuteAd()
@@ -62,7 +59,6 @@ class NotificationListener : NotificationListenerService() {
                         repository.incrementSongCounter()
                         lastTrackId = currentTrackId
                         lastUpdateTime = currentTime
-                        Log.d("TrackCounter", "✅ New Song (Notif): $currentTrackId")
                     }
                 }
                 wasAdDetected = false

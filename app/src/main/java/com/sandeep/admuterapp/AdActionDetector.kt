@@ -2,7 +2,6 @@ package com.sandeep.admuterapp
 
 import android.app.Notification
 import android.service.notification.StatusBarNotification
-import android.util.Log
 
 class AdActionDetector {
 
@@ -19,11 +18,8 @@ class AdActionDetector {
         // or availability. 
         // However, checking for "Skip to Next" action title or checking if actions are empty is a start.
         
-        Log.d("ActionDetector", "Analyzing ${actions.size} actions")
-        
         for (action in actions) {
             val title = action.title?.toString()?.lowercase() ?: "null"
-            Log.d("ActionDetector", "Action: $title")
             
             if (title.contains("next") || title.contains("skip")) {
                 hasNext = true
@@ -32,16 +28,7 @@ class AdActionDetector {
                 hasPrev = true
             }
         }
-        
-        // HEURISTIC:
-        // 1. If "Next" action is present, it's definitely a Song (user can skip).
-        // 2. If "Next" is missing, it MIGHT be an Ad.
-        // 3. To be safe, if we have very few actions (<=2) AND no Next button, it's likely an Ad.
-        //    (Ads usually only have Play/Pause, or nothing).
-        
         val isLikelyAd = !hasNext && actions.size <= 2
-        
-        Log.d("ActionDetector", "Analysis Result -> HasNext: $hasNext, Count: ${actions.size}, IsAd: $isLikelyAd")
         
         return isLikelyAd
     }

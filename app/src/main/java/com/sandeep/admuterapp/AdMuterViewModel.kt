@@ -1,6 +1,5 @@
 package com.sandeep.admuterapp
 
-import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.ViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -16,10 +15,8 @@ class AdMuterViewModel : ViewModel() {
 
     fun incrementAds() {
         _adsCount.value += 1
-        Log.d("AdMuterViewModel", "Ads counter incremented: ${_adsCount.value}")
     }
     fun incrementSongs() {
         _songsCount.value += 1
-        Log.d("AdMuterViewModel", "Songs counter incremented: ${_songsCount.value}")
     }
 }
