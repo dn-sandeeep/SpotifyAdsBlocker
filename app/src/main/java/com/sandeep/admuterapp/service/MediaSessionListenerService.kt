@@ -1,4 +1,4 @@
-package com.sandeep.admuterapp
+package com.sandeep.admuterapp.service
 
 import android.app.Notification
 import android.app.NotificationChannel
@@ -11,10 +11,9 @@ import android.support.v4.media.MediaBrowserCompat
 import android.support.v4.media.MediaMetadataCompat
 import android.support.v4.media.session.MediaControllerCompat
 import android.support.v4.media.session.PlaybackStateCompat
-import androidx.annotation.RequiresApi
 import androidx.media.MediaBrowserServiceCompat
-
-
+import com.sandeep.admuterapp.R
+import com.sandeep.admuterapp.data.AdRepository
 
 class MediaSessionListenerService : MediaBrowserServiceCompat() {
 
@@ -40,7 +39,7 @@ class MediaSessionListenerService : MediaBrowserServiceCompat() {
     override fun onCreate() {
         super.onCreate()
         isServiceRunning = true
-        repository = AdRepository(this)
+        repository = AdRepository.getInstance(this)
 
         val spotifyComponentName = ComponentName(spotifyPackageName, spotifyMediaPlaybackService)
         mediaBrowser = MediaBrowserCompat(this, spotifyComponentName, connectionCallbacks, null)
@@ -91,6 +90,8 @@ class MediaSessionListenerService : MediaBrowserServiceCompat() {
         }
     }
 
+    private var currentPlaybackState: PlaybackStateCompat? = null
+
     // --- MediaSession Connection Callbacks ---
     private val connectionCallbacks = object : MediaBrowserCompat.ConnectionCallback() {
         override fun onConnected() {
@@ -119,8 +120,9 @@ class MediaSessionListenerService : MediaBrowserServiceCompat() {
         }
 
         override fun onPlaybackStateChanged(state: PlaybackStateCompat?) {
-
-
+            currentPlaybackState = state
+            // Re-process metadata with new state if needed
+            mediaController?.metadata?.let { processMetadata(it) }
         }
     }
 
@@ -132,33 +134,39 @@ class MediaSessionListenerService : MediaBrowserServiceCompat() {
 
         val currentTrackId = "$title-$artist"
 
-        if (isAd(title, artist)) {
-            if (!wasAdDetected) {
-                repository.muteAd()
-                wasAdDetected = true
-            }
+        if (isAd(title, artist, currentPlaybackState)) {
+            repository.muteAd("MediaSession")
+            wasAdDetected = true
         } else {
-            repository.unmuteAd()
+            repository.unmuteAd("MediaSession")
 
             // 🔑 Count increase logic
             if (currentTrackId != lastTrackId) {
-                repository.incrementSongCounter()
+                repository.incrementSongCounter(currentTrackId)
                 lastTrackId = currentTrackId
             }
             wasAdDetected = false
         }
     }
-    private fun isAd(title: String, artist: String): Boolean {
+    private fun isAd(title: String, artist: String, state: PlaybackStateCompat?): Boolean {
 
         val lowerTitle = title.lowercase()
         val lowerArtist = artist.lowercase()
 
 
         val isExplicitAd = lowerTitle.contains("advertisement") || lowerArtist.contains("advertisement")
+        
+        // Spotify ads often have no skip actions enabled
+        val actions = state?.actions ?: 0L
+        val canSkipNext = (actions and PlaybackStateCompat.ACTION_SKIP_TO_NEXT) != 0L
+        val canSkipPrev = (actions and PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS) != 0L
+        
+        // If it's not a generic blank track, and we can't skip, it's likely an ad
+        val isLikelyAdByActions = !canSkipNext && !lowerTitle.isBlank()
 
         val isGenericAd = lowerTitle.isBlank() && lowerArtist.isBlank()
 
-        return isExplicitAd || isGenericAd
+        return isExplicitAd || isGenericAd || isLikelyAdByActions
     }
     override fun onGetRoot(clientPackageName: String, clientUid: Int, rootHints: Bundle?): BrowserRoot? {
 

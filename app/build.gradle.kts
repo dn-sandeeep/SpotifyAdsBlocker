@@ -5,37 +5,50 @@ plugins {
 }
 
 android {
+    // Namespace is for code, ApplicationId is for the Phone/Store
     namespace = "com.sandeep.admuterapp"
     compileSdk = 36
 
     defaultConfig {
         applicationId = "com.sandeep.admuterapp"
         minSdk = 21
-        targetSdk = 35
-        versionCode = 1
-        versionName = "1.0"
+        targetSdk = 36
+        versionCode = 10
+        versionName = "2.0.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
     buildTypes {
         release {
+            // Using debug signing for now (it's safe for sharing APKs manually)
+            signingConfig = signingConfigs.getByName("debug")
             isMinifyEnabled = false
+            isDebuggable = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
         }
+        debug {
+            signingConfig = signingConfigs.getByName("debug")
+        }
     }
+
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
     }
     kotlinOptions {
-        jvmTarget = "11"
+        jvmTarget = "17"
     }
     buildFeatures {
         compose = true
+    }
+
+    lint {
+        checkReleaseBuilds = false
+        abortOnError = false
     }
 }
 
@@ -43,8 +56,6 @@ dependencies {
     implementation(libs.androidx.media3.session)
     implementation(libs.androidx.media3.exoplayer)
     implementation(libs.androidx.media3.ui)
-    //implementation("androidx.media2:media2-session:1.3.1")
-
     implementation("androidx.media:media:1.7.0")
     implementation("androidx.localbroadcastmanager:localbroadcastmanager:1.1.0")
 

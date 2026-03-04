@@ -1,19 +1,10 @@
-package com.sandeep.admuterapp
+package com.sandeep.admuterapp.service
 
 import android.app.Notification
-import android.content.ContentValues.TAG
-import android.content.Intent
-import android.media.AudioManager
 import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
-import androidx.localbroadcastmanager.content.LocalBroadcastManager
-
-//manifest.xml
-//android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE"
-
-//<intent-filter>
-//     <action android:name="android.service.notification.NotificationListenerService" />
-//</intent-filter>
+import com.sandeep.admuterapp.data.AdRepository
+import com.sandeep.admuterapp.util.AdActionDetector
 
 class NotificationListener : NotificationListenerService() {
     private var lastTrackId: String? = null
@@ -24,7 +15,7 @@ class NotificationListener : NotificationListenerService() {
 
     override fun onCreate() {
         super.onCreate()
-        repository = AdRepository(this)
+        repository = AdRepository.getInstance(this)
     }
 
     override fun onNotificationPosted(sbn: StatusBarNotification?) {
@@ -46,17 +37,15 @@ class NotificationListener : NotificationListenerService() {
             val isActionAd = actionDetector.isAdBasedOnActions(sbn)
             
             if (isTextAd || isActionAd) {
-                if (!wasAdDetected) {
-                    repository.muteAd()
-                    wasAdDetected = true
-                }
+                repository.muteAd("NotificationListener")
+                wasAdDetected = true
             } else {
-                repository.unmuteAd()
+                repository.unmuteAd("NotificationListener")
 
                 if (currentTrackId != lastTrackId) {
                     val currentTime = System.currentTimeMillis()
                     if (currentTime - lastUpdateTime > 2000) { // Increased to 2000ms debounce
-                        repository.incrementSongCounter()
+                        repository.incrementSongCounter(currentTrackId)
                         lastTrackId = currentTrackId
                         lastUpdateTime = currentTime
                     }

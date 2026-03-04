@@ -1,4 +1,4 @@
-package com.sandeep.admuterapp
+package com.sandeep.admuterapp.util
 
 import android.app.Notification
 import android.service.notification.StatusBarNotification

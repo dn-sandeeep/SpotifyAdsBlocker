@@ -1,14 +1,14 @@
-package com.sandeep.admuterapp
+package com.sandeep.admuterapp.ui
 
-import android.content.BroadcastReceiver
-import android.content.Context
 import android.content.Intent
-import android.content.IntentFilter
+import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -34,40 +34,28 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
-import androidx.localbroadcastmanager.content.LocalBroadcastManager
+import com.sandeep.admuterapp.service.MediaSessionListenerService
 import com.sandeep.admuterapp.ui.theme.AdMuterAppTheme
 
 class MainActivity : ComponentActivity() {
     private val viewModel: AdMuterViewModel by viewModels()
 
-
-
-    private val counterReceiver = object : BroadcastReceiver() {
-        override fun onReceive(context: Context?, intent: Intent?) {
-            when (intent?.getStringExtra("TYPE")) {
-                "Ads" -> {
-                    viewModel.incrementAds()
-                }
-
-                "Songs" -> {
-                    viewModel.incrementSongs()
-                }
-            }
+    private val requestPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { isGranted: Boolean ->
+        if (isGranted) {
+            startMediaSessionService()
         }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-
-        LocalBroadcastManager.getInstance(this)
-            .registerReceiver(counterReceiver, IntentFilter("COUNTER_CHANGED"))
 
         setContent {
             AdMuterAppTheme {
@@ -78,16 +66,33 @@ class MainActivity : ComponentActivity() {
                         isServiceRunning = isServiceRunning(),
                         viewModel = viewModel
                     ) {
-                        //startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
-                        startMediaSessionService()
+                        checkPermissionsAndStart()
                     }
                 }
             }
         }
     }
+
+    private fun checkPermissionsAndStart() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ContextCompat.checkSelfPermission(
+                    this,
+                    android.Manifest.permission.POST_NOTIFICATIONS
+                ) != PackageManager.PERMISSION_GRANTED
+            ) {
+                requestPermissionLauncher.launch(android.Manifest.permission.POST_NOTIFICATIONS)
+            } else {
+                startMediaSessionService()
+            }
+        } else {
+            startMediaSessionService()
+        }
+    }
+
     private fun isServiceRunning(): Boolean {
         return MediaSessionListenerService.isServiceRunning
     }
+
     private fun startMediaSessionService() {
         val intent = Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)
         startActivity(intent)
@@ -95,11 +100,6 @@ class MainActivity : ComponentActivity() {
         // Also start the foreground service
         val serviceIntent = Intent(this, MediaSessionListenerService::class.java)
         ContextCompat.startForegroundService(this, serviceIntent)
-    }
-    override fun onDestroy() {
-        super.onDestroy()
-        // --- Unregister Broadcast ---
-        LocalBroadcastManager.getInstance(this).unregisterReceiver(counterReceiver)
     }
 }
 @Composable
@@ -115,7 +115,6 @@ fun AdMuterApp(
         mutableStateOf(isServiceRunning)
 
     }
-    val context = LocalContext.current
     val adsCount by viewModel.adsCount.collectAsState()
     val songsCount by viewModel.songsCount.collectAsState()
     Box(
