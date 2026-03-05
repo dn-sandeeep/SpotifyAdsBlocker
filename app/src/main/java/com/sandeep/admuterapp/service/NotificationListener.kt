@@ -8,8 +8,10 @@ import com.sandeep.admuterapp.util.AdActionDetector
 
 class NotificationListener : NotificationListenerService() {
     private var lastTrackId: String? = null
+    private var lastRealSongTrackId: String? = null
     private lateinit var repository: AdRepository
     private var wasAdDetected = false
+    private var lastAdDetectedTime = 0L
     private val actionDetector = AdActionDetector()
     private var lastUpdateTime = 0L
 
@@ -27,30 +29,46 @@ class NotificationListener : NotificationListenerService() {
 
             val title = extras.getCharSequence(Notification.EXTRA_TITLE)?.toString() ?: ""
             val text = extras.getCharSequence(Notification.EXTRA_TEXT)?.toString() ?: ""
-
-            actionDetector.isAdBasedOnActions(sbn)
-
             val currentTrackId = "$title-$text"
-            
+
+            android.util.Log.d("AdMuter_Log", "[NotifListener] Notification Received: Title='$title', Text='$text'")
+
             // Hybrid Check: Text-based OR Action-based
             val isTextAd = isAd(title, text)
             val isActionAd = actionDetector.isAdBasedOnActions(sbn)
+            val isCurrentAd = isTextAd || isActionAd
             
-            if (isTextAd || isActionAd) {
+            android.util.Log.d("AdMuter_Log", "[NotifListener] Ad Check: isTextAd=$isTextAd, isActionAd=$isActionAd")
+
+            if (isCurrentAd) {
+                android.util.Log.i("AdMuter_Log", "[NotifListener] !! AD DETECTED !! Source: ${if (isTextAd) "Text" else "Actions"}")
                 repository.muteAd("NotificationListener")
                 wasAdDetected = true
+                lastAdDetectedTime = System.currentTimeMillis()
             } else {
+                // --- FLICKER PROTECTION LOGIC ---
+                val currentTime = System.currentTimeMillis()
+                val timeSinceLastAd = currentTime - lastAdDetectedTime
+                
+                // If we just saw an ad (< 1.5s ago) and this "song" is the same as the one BEFORE the ad, 
+                // it's a flicker/glitch. Ignore it.
+                if (timeSinceLastAd < 1500 && currentTrackId == lastRealSongTrackId) {
+                    android.util.Log.w("AdMuter_Log", "[NotifListener] Flicker Detected! Ignoring old song metadata during ad transition.")
+                    return 
+                }
+
+                android.util.Log.d("AdMuter_Log", "[NotifListener] Song Detected: Title='$title'")
                 repository.unmuteAd("NotificationListener")
+                lastRealSongTrackId = currentTrackId
+                wasAdDetected = false
 
                 if (currentTrackId != lastTrackId) {
-                    val currentTime = System.currentTimeMillis()
                     if (currentTime - lastUpdateTime > 2000) { // Increased to 2000ms debounce
                         repository.incrementSongCounter(currentTrackId)
                         lastTrackId = currentTrackId
                         lastUpdateTime = currentTime
                     }
                 }
-                wasAdDetected = false
             }
         }
     }
@@ -58,6 +76,7 @@ class NotificationListener : NotificationListenerService() {
     private fun isAd(title: String, text: String): Boolean {
         val lowerTitle = title.lowercase()
         val lowerText = text.lowercase()
-        return lowerTitle.contains("advertisement") || lowerText.contains("advertisement") || (lowerTitle.isBlank() && lowerText.isBlank())
+        val result = lowerTitle.contains("advertisement") || lowerText.contains("advertisement") || (lowerTitle.isBlank() && lowerText.isBlank())
+        return result
     }
 }

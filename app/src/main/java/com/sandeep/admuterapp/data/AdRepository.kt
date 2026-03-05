@@ -21,19 +21,25 @@ class AdRepository private constructor(context: Context) {
     }
 
     fun muteAd(source: String) {
+        android.util.Log.d("AdMuter_Log", "[Repo] muteAd requested by: $source")
         synchronized(activeMuteSources) {
             if (activeMuteSources.isEmpty()) {
+                android.util.Log.i("AdMuter_Log", ">>> MUTING AUDIO (First source: $source)")
                 audioManager.adjustStreamVolume(AudioManager.STREAM_MUSIC, AudioManager.ADJUST_MUTE, 0)
                 _events.tryEmit(AdEvent.AdDetected)
             }
             activeMuteSources.add(source)
+            android.util.Log.d("AdMuter_Log", "[Repo] Active sources: $activeMuteSources")
         }
     }
 
     fun unmuteAd(source: String) {
+        android.util.Log.d("AdMuter_Log", "[Repo] unmuteAd requested by: $source")
         synchronized(activeMuteSources) {
             activeMuteSources.remove(source)
+            android.util.Log.d("AdMuter_Log", "[Repo] Remaining sources: $activeMuteSources")
             if (activeMuteSources.isEmpty()) {
+                android.util.Log.i("AdMuter_Log", "<<< UNMUTING AUDIO (All sources cleared)")
                 audioManager.adjustStreamVolume(AudioManager.STREAM_MUSIC, AudioManager.ADJUST_UNMUTE, 0)
             }
         }

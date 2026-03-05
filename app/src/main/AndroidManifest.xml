@@ -23,7 +23,7 @@
         <activity
             android:name=".ui.MainActivity"
             android:exported="true"
-            android:label="AdMuterApp"
+            android:label="AdMuter App"
             android:theme="@style/Theme.AdMuterApp">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -34,7 +34,7 @@
         <service
             android:name=".service.MediaSessionListenerService"
             android:exported="true"
-            android:label="AdMuterApp"
+            android:label="AdMuter App"
             android:foregroundServiceType="mediaPlayback">
             <intent-filter>
                 <action android:name="android.media.browse.MediaBrowserService" />

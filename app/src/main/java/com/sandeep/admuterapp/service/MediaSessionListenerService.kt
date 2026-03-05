@@ -134,7 +134,6 @@ class MediaSessionListenerService : MediaBrowserServiceCompat() {
         val title = metadata?.getString(MediaMetadataCompat.METADATA_KEY_TITLE) ?: ""
         val artist = metadata?.getString(MediaMetadataCompat.METADATA_KEY_ARTIST) ?: ""
 
-
         val currentTrackId = "$title-$artist"
 
         if (isAd(title, artist, currentPlaybackState)) {
@@ -156,20 +155,20 @@ class MediaSessionListenerService : MediaBrowserServiceCompat() {
         val lowerTitle = title.lowercase()
         val lowerArtist = artist.lowercase()
 
-
         val isExplicitAd = lowerTitle.contains("advertisement") || lowerArtist.contains("advertisement")
         
         // Spotify ads often have no skip actions enabled
         val actions = state?.actions ?: 0L
         val canSkipNext = (actions and PlaybackStateCompat.ACTION_SKIP_TO_NEXT) != 0L
         val canSkipPrev = (actions and PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS) != 0L
-        
+
         // If it's not a generic blank track, and we can't skip, it's likely an ad
         val isLikelyAdByActions = !canSkipNext && !lowerTitle.isBlank()
 
         val isGenericAd = lowerTitle.isBlank() && lowerArtist.isBlank()
 
-        return isExplicitAd || isGenericAd || isLikelyAdByActions
+        val result = isExplicitAd || isGenericAd || isLikelyAdByActions
+        return result
     }
     override fun onGetRoot(clientPackageName: String, clientUid: Int, rootHints: Bundle?): BrowserRoot? {
 

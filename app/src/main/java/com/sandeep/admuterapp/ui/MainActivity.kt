@@ -117,8 +117,8 @@ class MainActivity : ComponentActivity() {
         startActivity(intent)
         
         // Also start the foreground service
-        val serviceIntent = Intent(this, MediaSessionListenerService::class.java)
-        ContextCompat.startForegroundService(this, serviceIntent)
+        // val serviceIntent = Intent(this, MediaSessionListenerService::class.java)
+        // ContextCompat.startForegroundService(this, serviceIntent)
     }
 }
 @Composable
